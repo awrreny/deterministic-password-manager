@@ -127,8 +127,40 @@ def change_authentication_methods():
 
 
 def change_settings():
-    raise NotImplementedError()
-    # TODO
+    # for now only works with string values
+    ALLOWED_VALUES = {
+        "askUsername": ["yes", "no"],
+        "askCounter": ["yes", "no"],
+        "askPolicy": ["yes", "no"],
+        "printOrCopyPass": ["print", "copy", "ask"],
+        "saveSites": ["yes", "no", "ask"],
+        "saveUsernames": ["yes", "no", "ask"],
+        "saveCounters": ["yes", "no", "ask"],
+        "savePolicies": ["yes", "no", "ask"],
+    }
+
+    keys = list(settings.keys())
+    print("Settings:")
+    for idx, key in enumerate(keys):
+        print(f"[{idx}] {key}: {settings[key]}")
+    choice = int(input("Select a setting to change (number): "))
+    
+    if 0 <= choice < len(keys):
+        key = keys[choice]
+        while True:
+            new_value = input(f"Enter new value for '{key}' (current: {settings[key]}): ")
+            if new_value in ALLOWED_VALUES.get(key, []):
+                break
+            print(f"Invalid value. Allowed values for '{key}': {', '.join(ALLOWED_VALUES.get(key, []))}")
+        
+        settings[key] = new_value
+        
+        with open(SETTINGS_FILE, "w") as f:
+            json.dump(settings, f, indent=4)
+
+        print("Setting updated.")
+    else:
+        print("Invalid choice.")
 
 if __name__ == "__main__":
     main_menu()
