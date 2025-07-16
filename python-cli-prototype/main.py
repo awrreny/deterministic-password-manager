@@ -6,6 +6,13 @@ import string
 import base64
 
 try:
+    import pyperclip
+    clipboard_available = True
+except ImportError:
+    print("pyperclip not available, clipboard functionality will not work. (will print passwords instead)")
+    clipboard_available = False
+
+try:
     import argon2
     # from argon2
     argon2_available = True
@@ -22,6 +29,9 @@ Do not use this for real passwords!
 SETTINGS_FILE = "settings.json"
 with open(SETTINGS_FILE, "r") as f:
     settings = json.load(f)
+
+if not clipboard_available:
+    settings["printOrCopyPass"] = "print"  # can lead to settings file changing
 
 POLICY_FILE = "pass_policies.json"
 with open(POLICY_FILE, "r") as f:
@@ -98,6 +108,17 @@ def print_and_hide(message, duration):
     print(replace_text + " " * pad_amt, flush=True)
 
 
+def copy_to_clipboard_and_clear(text, duration):
+    pyperclip.copy(text)
+    print("Copied to clipboard. Clearing in", duration, "seconds.")
+    try:
+        sleep(duration)
+    except KeyboardInterrupt:
+        print("\nClearing clipboard before exit...")
+    finally:
+        pyperclip.copy("")
+
+
 def get_password():
     master_key = get_master_key()
     
@@ -140,8 +161,25 @@ def get_password():
                 continue   
 
     password = generate_password(master_key, domain, username, counter, policy)
-    print_and_hide(f"Password: {password}", settings.get("passwordShownTime", 30))
-    # TODO implement print/copy functionality
+
+    if settings.get("printOrCopyPass", "copy") == "copy":
+        copy_to_clipboard_and_clear(password, settings.get("passwordCopyTime", 15))
+    elif settings.get("printOrCopyPass", "copy") == "print":
+        print_and_hide(f"Password: {password}", settings.get("passwordShownTime", 30))
+    elif settings.get("printOrCopyPass", "copy") == "ask":
+        match choose_option({
+            "p": "Print password",
+            "c": "Copy password to clipboard",
+            "q": "Quit without printing/copying"
+        }):
+            case "p":
+                print_and_hide(f"Password: {password}", settings.get("passwordShownTime", 30))
+            case "c":
+                copy_to_clipboard_and_clear(password, settings.get("passwordCopyTime", 15))
+            case "q":
+                print("Exiting...")
+
+
 
     # TODO save relevant data (domain, username, counter, policy) if settings allow it
 
@@ -210,37 +248,61 @@ def change_authentication_methods():
 
 
 def change_settings():
-    # for now only works with string values
+    # Define allowed values and types for each setting
     ALLOWED_VALUES = {
-        "askUsername": ["yes", "no"],
-        "askCounter": ["yes", "no"],
-        "askPolicy": ["yes", "no"],
-        "printOrCopyPass": ["print", "copy", "ask"],
-        "saveSites": ["yes", "no", "ask"],
-        "saveUsernames": ["yes", "no", "ask"],
-        "saveCounters": ["yes", "no", "ask"],
-        "savePolicies": ["yes", "no", "ask"],
+        "askUsername": (str, ("yes", "no")),
+        "askCounter": (str, ("yes", "no")),
+        "askPolicy": (str, ("yes", "no")),
+        "printOrCopyPass": (str, ("print", "copy", "ask")),
+        "saveSites": (str, ("yes", "no", "ask")),
+        "saveUsernames": (str, ("yes", "no", "ask")),
+        "saveCounters": (str, ("yes", "no", "ask")),
+        "savePolicies": (str, ("yes", "no", "ask")),
+        "passwordShownTime": (int, range(0, 121)),
+        "passwordCopyTime": (int, range(0, 121)),
     }
 
+
     keys = list(settings.keys())
+
+    # print settings
     print("Settings:")
     for idx, key in enumerate(keys):
         print(f"[{idx}] {key}: {settings[key]}")
-    choice = int(input("Select a setting to change (number): "))
-    
+    try:
+        choice = int(input("Select a setting to change (number): "))
+    except ValueError:
+        print("Invalid choice.")
+        return
+
     if 0 <= choice < len(keys):
         key = keys[choice]
+        value_type, allowed_value_range = ALLOWED_VALUES[key]
+        
         while True:
             new_value = input(f"Enter new value for '{key}' (current: {settings[key]}): ")
-            if new_value in ALLOWED_VALUES.get(key, []):
-                break
-            print(f"Invalid value. Allowed values for '{key}': {', '.join(ALLOWED_VALUES.get(key, []))}")
-        
-        settings[key] = new_value
-        
+            if value_type is int:
+                try:
+                    new_value_int = int(new_value)
+                except ValueError:
+                    print("Invalid value. Please enter an integer.")
+                    continue
+                settings[key] = new_value_int
+                if new_value_int not in allowed_value_range:
+                    print(f"Invalid value. Allowed range for '{key}': {allowed_value_range}")
+                else:
+                    break
+            elif value_type is str:
+                if new_value in allowed_value_range:
+                    settings[key] = new_value
+                    break
+                print(f"Invalid value. Allowed values for '{key}': {', '.join(allowed_value_range)}")
+            else:
+                raise ValueError(f"Unsupported value type {value_type.__name__}")
+
+
         with open(SETTINGS_FILE, "w") as f:
             json.dump(settings, f, indent=4)
-
         print("Setting updated.")
     else:
         print("Invalid choice.")
