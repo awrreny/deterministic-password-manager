@@ -1,0 +1,10 @@
+{
+    "askUsername": "yes",
+    "askCounter": "yes",
+    "askPolicy": "yes",
+    "printOrCopyPass": "copy",
+    "saveSites": "no",
+    "saveUsernames": "no",
+    "saveCounters": "no",
+    "savePolicies": "no"
+}
