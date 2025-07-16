@@ -13,6 +13,12 @@ except ImportError:
     argon2_available = False
     print("argon2 not available, using pbkdf2_hmac instead.")
 
+"""
+NO SECURITY GUARANTEE
+this is a python prototype - there is no guarantee of secure memory handling, input protection etc. (e.g limitations on zeroing memory after use).
+Do not use this for real passwords!
+"""
+
 SETTINGS_FILE = "settings.json"
 with open(SETTINGS_FILE, "r") as f:
     settings = json.load(f)
