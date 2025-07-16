@@ -6,5 +6,7 @@
     "saveSites": "no",
     "saveUsernames": "no",
     "saveCounters": "no",
-    "savePolicies": "no"
+    "savePolicies": "no",
+    "passwordShownTime": 30,
+    "passwordCopyTime": 15
 }

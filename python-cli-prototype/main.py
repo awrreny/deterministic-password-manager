@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, monotonic
 import json
 import hashlib
 from treefa import get_master_key
@@ -84,6 +84,19 @@ def main_menu():
             exit(0)
 
 
+# no security guarantee
+def print_and_hide(message, duration):
+    start = monotonic()
+    while monotonic() - start < duration:
+        time_remaining = round(duration - (monotonic() - start))
+        m = f"\r{message} (Hidden in {time_remaining})"
+        print(m, end="\r", flush=True)
+        sleep(0.1)
+    replace_text = "Text hidden"
+    max_len = len(f"\r{message} (Hidden in {duration})")
+    pad_amt = max(max_len - len(replace_text),0)
+    print(replace_text + " " * pad_amt, flush=True)
+
 
 def get_password():
     master_key = get_master_key()
@@ -127,7 +140,7 @@ def get_password():
                 continue   
 
     password = generate_password(master_key, domain, username, counter, policy)
-    print(f"Generated password: {password}")
+    print_and_hide(f"Password: {password}", settings.get("passwordShownTime", 30))
     # TODO implement print/copy functionality
 
     # TODO save relevant data (domain, username, counter, policy) if settings allow it
