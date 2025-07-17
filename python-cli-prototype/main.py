@@ -5,6 +5,7 @@ from treefa import get_master_key
 import string
 import base64
 from collections import defaultdict
+from inpututil import get_input, RANGE_INCLUSIVE
 
 try:
     import pyperclip
@@ -53,29 +54,12 @@ it was removed to make the tip 'always picking the first applicable policy' less
     },
 """
 
-
-def pos_int_input(prompt):
-    while True:
-        try:
-            out = int(input(prompt).strip())
-            if out < 0:
-                print("Enter a positive integer.")
-            else:
-                return out
-        except ValueError:
-            print("Enter integer.")
-
-
 def choose_option(options):
-    while True:
-        print("select an option:")
-        for key, desc in options.items():
-            print(f"[{key}] {desc}")
-        choice = input("> ").strip().lower()
-        if choice in options:
-            return choice
-        print(f"Invalid choice, please enter one of {'/'.join(options.keys())}.\n")
-        sleep(0.5)
+    print("Select an option:")
+    for key, desc in options.items():
+        print(f"[{key}] {desc}")
+    return get_input("> ", str, list(options.keys()))
+
 
 def main_menu():
     match choose_option({
@@ -90,6 +74,7 @@ def main_menu():
             change_authentication_methods()
         case "s":
             change_settings()
+            main_menu()
         case "q":
             print("Exiting...")
             exit(0)
@@ -200,38 +185,29 @@ def get_password():
             print("See site_data.json for saved usernames, counters, policies.")
     
 
-    domain = input("Enter the domain: ").strip()
+    domain = get_input("Enter the domain\n> ")
 
     if settings.get("askUsername", "yes") == "yes":
-        username = input("Enter the username: ").strip()
+        username = get_input("Enter username\n> ")
     else:
         username = ""
     
     if settings.get("askCounter", "yes") == "yes":
-        counter = pos_int_input("Enter the password version (counter): ")
+        counter = get_input("Enter the password version (counter)\n> ", int, RANGE_INCLUSIVE(0))
     else:
         counter = 0
 
     policy = policies.get("default")
     if settings.get("askPolicy", "yes") == "yes":
-        while True:
-            # lets user choose policy by index or name
-            print("\nAvailable password policies:")
-            for idx, (name, ans) in enumerate(policies.items()):
-                print(f"[{idx}] {name} ({ans['length']} chars)")
-            ans = input("Enter the password policy or leave blank for default. " \
-            "\nTip: always picking the first applicable policy removes the need to remember which one was chosen.").strip()
-            if ans.isdigit() and 0 <= int(ans) < len(policies):
-                policy = list(policies.values())[int(ans)]
-                break
-            elif ans in policies:
-                policy = policies[ans]
-                break
-            elif ans == "":
-                break
-            else:
-                print("Invalid policy, please enter the index or name of the policy")
-                continue   
+        print("\nAvailable password policies:")
+        for idx, (name, ans) in enumerate(policies.items()):
+            print(f"[{idx}] {name} ({ans['length']} chars)")
+
+        prompt = "Enter the password policy (number) or leave blank for default. " \
+        "\nTip: always picking the first applicable policy removes the need to remember which one was chosen\n> "
+        policy_num = get_input(prompt, int, range(len(policies)))
+        policy = list(policies.values())[policy_num]
+ 
 
     handle_saving(domain, username, counter, policy)
 
@@ -322,8 +298,8 @@ def change_settings():
         "saveUsernames": (str, ("yes", "no", "ask")),
         "saveCounters": (str, ("yes", "no", "ask")),
         "savePolicies": (str, ("yes", "no", "ask")),
-        "passwordShownTime": (int, range(0, 121)),
-        "passwordCopyTime": (int, range(0, 121)),
+        "passwordShownTime": (int, RANGE_INCLUSIVE(0)),
+        "passwordCopyTime": (int, RANGE_INCLUSIVE(0)),
     }
 
 
@@ -333,43 +309,22 @@ def change_settings():
     print("Settings:")
     for idx, key in enumerate(keys):
         print(f"[{idx}] {key}: {settings[key]}")
-    try:
-        choice = int(input("Select a setting to change (number): "))
-    except ValueError:
-        print("Invalid choice.")
-        return
 
-    if 0 <= choice < len(keys):
-        key = keys[choice]
-        value_type, allowed_value_range = ALLOWED_VALUES[key]
-        
-        while True:
-            new_value = input(f"Enter new value for '{key}' (current: {settings[key]}): ")
-            if value_type is int:
-                try:
-                    new_value_int = int(new_value)
-                except ValueError:
-                    print("Invalid value. Please enter an integer.")
-                    continue
-                settings[key] = new_value_int
-                if new_value_int not in allowed_value_range:
-                    print(f"Invalid value. Allowed range for '{key}': {allowed_value_range}")
-                else:
-                    break
-            elif value_type is str:
-                if new_value in allowed_value_range:
-                    settings[key] = new_value
-                    break
-                print(f"Invalid value. Allowed values for '{key}': {', '.join(allowed_value_range)}")
-            else:
-                raise ValueError(f"Unsupported value type {value_type.__name__}")
+    choice = get_input("Select a setting to change (number)\n> ", int, range(len(settings)))
+
+    key = keys[choice]
+    value_type, allowed_value_range = ALLOWED_VALUES[key]
+
+    print(f"Current value: {settings[key]}")
+    print(f"Allowed values: {allowed_value_range}")
+    new_value = get_input(f"Enter new value for '{key}'\n> ", value_type, allowed_value_range)
+    settings[key] = new_value
 
 
-        with open(SETTINGS_FILE, "w") as f:
-            json.dump(settings, f, indent=4)
-        print("Setting updated.")
-    else:
-        print("Invalid choice.")
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(settings, f, indent=4)
+    print("Setting updated.")
+
 
 if __name__ == "__main__":
     main_menu()
