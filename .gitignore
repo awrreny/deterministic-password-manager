@@ -1,0 +1,6 @@
+*.md
+__pycache__
+*.pyc
+*.pyo
+*.enc
+python-cli-prototype/settings.json

@@ -1,0 +1,42 @@
+{
+    "default": {
+        "length": 16,
+        "allowedChars": "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*()",
+        "requireUppercase": true,
+        "requireLowercase": true,
+        "requireNumbers": true,
+        "requireSpecialChars": true
+    },
+    "alphanumeric": { 
+        "length": 16,
+        "allowedChars": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+        "requireUppercase": true,
+        "requireLowercase": true,
+        "requireNumbers": true,
+        "requireSpecialChars": false
+    },
+    "alphanumeric_short": { 
+        "length": 12,
+        "allowedChars": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+        "requireUppercase": true,
+        "requireLowercase": true,
+        "requireNumbers": true,
+        "requireSpecialChars": false
+    },
+    "numeric": {
+        "length": 16,
+        "allowedChars": "0123456789",
+        "requireUppercase": false,
+        "requireLowercase": false,
+        "requireNumbers": true,
+        "requireSpecialChars": false
+    },
+    "numeric_short": {
+        "length": 12,
+        "allowedChars": "0123456789",
+        "requireUppercase": false,
+        "requireLowercase": false,
+        "requireNumbers": true,
+        "requireSpecialChars": false
+    }
+}
