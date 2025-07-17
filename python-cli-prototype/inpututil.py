@@ -9,14 +9,13 @@ def get_input(prompt, target_type = str, allowed_range = None, strip_whitespace=
     if not isinstance(target_type, type):
         raise TypeError("target_type must be a type like int, str, or bool")
 
-    # note bool("False") returns True, needs separa"te handling
+    # note bool("False") returns True, needs separate handling
     if target_type is bool:
-        print("asdf")
-        x = get_input(prompt, str, ("true", "false", "1", "0"))
-        return x in ("true", "1")
+        inp = get_input(prompt, str, ("true", "false", "1", "0"))
+        return inp in ("true", "1")
 
     if allowed_range is not None and not hasattr(allowed_range, '__contains__'):
-        raise TypeError("allowed_range must support membership testing (e.g., list, range)")
+        raise TypeError("allowed_range must support membership testing (e.g., list, range). Currently: " + str(type(allowed_range)))
 
     while True:
         inp = input(prompt)
@@ -48,6 +47,3 @@ class RANGE_INCLUSIVE():
         start = "-inf" if self.start is None else self.start
         end = "inf" if self.end is None else self.end
         return f"RANGE_INCLUSIVE({start}, {end})"
-
-
-# print(get_input("Enter the password version (counter): ", int, RANGE_INCLUSIVE(0, None)))
