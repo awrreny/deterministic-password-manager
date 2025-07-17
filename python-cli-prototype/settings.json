@@ -2,7 +2,7 @@
     "askUsername": "yes",
     "askCounter": "yes",
     "askPolicy": "yes",
-    "printOrCopyPass": "copy",
+    "printOrCopyPass": "ask",
     "saveSites": "no",
     "saveUsernames": "no",
     "saveCounters": "no",

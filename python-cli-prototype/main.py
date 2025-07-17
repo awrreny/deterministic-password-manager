@@ -3,9 +3,9 @@ import json
 import hashlib
 from treefa import get_master_key
 import string
-import base64
 from collections import defaultdict
 from inpututil import get_input, RANGE_INCLUSIVE
+from settings_handler import get_settings, change_settings, reset_settings
 
 try:
     import pyperclip
@@ -28,9 +28,8 @@ this is a python prototype - there is no guarantee of secure memory handling, in
 Do not use this for real passwords!
 """
 
-SETTINGS_FILE = "settings.json"
-with open(SETTINGS_FILE, "r") as f:
-    settings = json.load(f)
+
+settings = get_settings()
 
 if not clipboard_available:
     settings["printOrCopyPass"] = "print"  # can lead to settings file changing
@@ -65,7 +64,8 @@ def main_menu():
     match choose_option({
         "p": "Get password",
         "c": "Change authentication methods",
-        "s": "Settings",
+        "s": "Change settings",
+        "r": "Reset settings",
         "q": "Quit"
     }):
         case "p":
@@ -74,6 +74,9 @@ def main_menu():
             change_authentication_methods()
         case "s":
             change_settings()
+            main_menu()
+        case "r":
+            reset_settings()
             main_menu()
         case "q":
             print("Exiting...")
@@ -287,43 +290,9 @@ def change_authentication_methods():
     # TODO
 
 
-def change_settings():
-    # Define allowed values and types for each setting
-    ALLOWED_VALUES = {
-        "askUsername": (str, ("yes", "no")),
-        "askCounter": (str, ("yes", "no")),
-        "askPolicy": (str, ("yes", "no")),
-        "printOrCopyPass": (str, ("print", "copy", "ask")),
-        "saveSites": (str, ("yes", "no", "ask")),
-        "saveUsernames": (str, ("yes", "no", "ask")),
-        "saveCounters": (str, ("yes", "no", "ask")),
-        "savePolicies": (str, ("yes", "no", "ask")),
-        "passwordShownTime": (int, RANGE_INCLUSIVE(0)),
-        "passwordCopyTime": (int, RANGE_INCLUSIVE(0)),
-    }
 
 
-    keys = list(settings.keys())
 
-    # print settings
-    print("Settings:")
-    for idx, key in enumerate(keys):
-        print(f"[{idx}] {key}: {settings[key]}")
-
-    choice = get_input("Select a setting to change (number)\n> ", int, range(len(settings)))
-
-    key = keys[choice]
-    value_type, allowed_value_range = ALLOWED_VALUES[key]
-
-    print(f"Current value: {settings[key]}")
-    print(f"Allowed values: {allowed_value_range}")
-    new_value = get_input(f"Enter new value for '{key}'\n> ", value_type, allowed_value_range)
-    settings[key] = new_value
-
-
-    with open(SETTINGS_FILE, "w") as f:
-        json.dump(settings, f, indent=4)
-    print("Setting updated.")
 
 
 if __name__ == "__main__":
