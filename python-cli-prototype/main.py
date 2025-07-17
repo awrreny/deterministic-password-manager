@@ -4,6 +4,7 @@ import hashlib
 from treefa import get_master_key
 import string
 import base64
+from collections import defaultdict
 
 try:
     import pyperclip
@@ -97,15 +98,16 @@ def main_menu():
 # no security guarantee
 def print_and_hide(message, duration):
     start = monotonic()
-    while monotonic() - start < duration:
-        time_remaining = round(duration - (monotonic() - start))
-        m = f"\r{message} (Hidden in {time_remaining})"
-        print(m, end="\r", flush=True)
-        sleep(0.1)
-    replace_text = "Text hidden"
-    max_len = len(f"\r{message} (Hidden in {duration})")
-    pad_amt = max(max_len - len(replace_text),0)
-    print(replace_text + " " * pad_amt, flush=True)
+    try:
+        while monotonic() - start < duration:
+            time_remaining = round(duration - (monotonic() - start))
+            m = f"\r{message} (Hidden in {time_remaining})"
+            print(m, end="\r", flush=True)
+            sleep(0.1)
+    except KeyboardInterrupt:
+        print("\033[2K\rText Hidden")
+        exit(0)
+    print("\033[2K\rText Hidden")
 
 
 def copy_to_clipboard_and_clear(text, duration):
@@ -119,12 +121,83 @@ def copy_to_clipboard_and_clear(text, duration):
         pyperclip.copy("")
 
 
+# given a setting that is either "yes", "no" or "ask", returns True if "yes", False if "no" and asks user if "ask"
+# options should be "y, n" for yes and no respectively
+def get_setting_bool(setting_name, prompt, trueVal="yes", falseVal="no", trueChar="y"):
+    setting_value = settings.get(setting_name, "ask")
+    if setting_value == trueVal:
+        return True
+    elif setting_value == falseVal:
+        return False
+    elif setting_value == "ask":
+        while True:
+            return (choose_option(prompt) == trueChar)
+    else:
+        raise ValueError(f"Invalid setting value for {setting_name}: {setting_value}. Expected '{trueVal}', '{falseVal}' or 'ask'.")
+
+
+def handle_saving(domain, username, counter, policy):
+    if get_setting_bool("saveSites", {
+        "y": "Save site data",
+        "n": "Do not save site data"
+    }):
+        toSave = {}
+
+        if get_setting_bool("saveUsernames", {
+            "y": "Save username",
+            "n": "Do not save username"
+        }):
+            toSave["username"] = username
+
+        if get_setting_bool("saveCounters", {
+            "y": "Save counter",
+            "n": "Do not save counter"
+        }):
+            toSave["counter"] = counter
+
+        if get_setting_bool("savePolicies", {
+            "y": "Save policy",
+            "n": "Do not save policy"
+        }):
+            toSave["policy"] = policy
+
+        saveData(domain, toSave)
+
+
+SITE_DATA_FILE = "site_data.json"
+def saveData(domain, data):
+    """
+    Saves site data to a JSON file.
+    If the file does not exist, it will be created.
+    If the file exists, it will be updated with the new data.
+    """
+    try:
+        with open(SITE_DATA_FILE, "r") as f:
+            sites_data = json.load(f)
+    except FileNotFoundError:
+        sites_data = {}
+
+    sites_data = defaultdict(list, sites_data)  # ensure sites_data is a defaultdict
+
+    # Add the new data to the sites_data if not already present
+    if data not in sites_data[domain]:
+        sites_data[domain].append(data)
+        print("Site data saved successfully.")
+        with open(SITE_DATA_FILE, "w") as f:
+            json.dump(sites_data, f, indent=4)
+    else:
+        print("Site data found (not saving again).")
+
+    
+
 def get_password():
     master_key = get_master_key()
     
     if settings.get("saveSites", "no") == "yes":
-        # print saved sites
-        print("Saved sites not implemented yet.")
+        with open(SITE_DATA_FILE, "r") as f:
+            sites_data = json.load(f)
+            print(f"Available sites: {', '.join(sites_data.keys())}")
+            print("See site_data.json for saved usernames, counters, policies.")
     
 
     domain = input("Enter the domain: ").strip()
@@ -160,28 +233,19 @@ def get_password():
                 print("Invalid policy, please enter the index or name of the policy")
                 continue   
 
+    handle_saving(domain, username, counter, policy)
+
     password = generate_password(master_key, domain, username, counter, policy)
 
-    if settings.get("printOrCopyPass", "copy") == "copy":
-        copy_to_clipboard_and_clear(password, settings.get("passwordCopyTime", 15))
-    elif settings.get("printOrCopyPass", "copy") == "print":
+    if get_setting_bool("printOrCopyPass", {
+        "p": "Print password",
+        "c": "Copy password to clipboard",
+    }, trueVal="print", falseVal="copy", trueChar="p"):
         print_and_hide(f"Password: {password}", settings.get("passwordShownTime", 30))
-    elif settings.get("printOrCopyPass", "copy") == "ask":
-        match choose_option({
-            "p": "Print password",
-            "c": "Copy password to clipboard",
-            "q": "Quit without printing/copying"
-        }):
-            case "p":
-                print_and_hide(f"Password: {password}", settings.get("passwordShownTime", 30))
-            case "c":
-                copy_to_clipboard_and_clear(password, settings.get("passwordCopyTime", 15))
-            case "q":
-                print("Exiting...")
+    else:
+        copy_to_clipboard_and_clear(password, settings.get("passwordCopyTime", 15))
 
 
-
-    # TODO save relevant data (domain, username, counter, policy) if settings allow it
 
 
 def generate_password(master_key, domain: str, username, counter, policy):
