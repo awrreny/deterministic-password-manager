@@ -131,6 +131,8 @@ class GF2n:
         
 
     def inverse(self, a):
+        if a == 0:
+            raise ZeroDivisionError("0 does not have a multiplicative inverse")
         gcd, i, _ = extended_polynomial_gcd(a, self.modulus)
         # a*i + _*p = 1
         # so a*i === 1 (mod p)
