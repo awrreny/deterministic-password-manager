@@ -147,10 +147,12 @@ class GF2n:
         if not isinstance(value, int):
             raise TypeError("Value must be an integer")
         if isinstance(value, int):
-            # TODO check
-            while value.bit_length() >= self.bitlength:
-                # reduce value by the modulus polynomial
-                value ^= self.modulus << (value.bit_length() - self.bitlength)
+            if value.bit_length() > self.bitlength:
+                raise ValueError("Value is too large to be in field")
+            # # note self.modulus.bit_length() = self.bitlength + 1
+            # while value.bit_length() > self.bitlength:
+            #     # reduce value by the modulus polynomial
+            #     value ^= self.modulus << (value.bit_length() - self.bitlength - 1)
             
             return field_element(value, self)
 
