@@ -4,7 +4,7 @@ import hashlib
 from treefa import get_master_key
 import string
 from collections import defaultdict
-from inpututil import get_input, RANGE_INCLUSIVE
+from inpututil import get_input, choose_option, RANGE_INCLUSIVE
 from settings_handler import get_settings, change_settings, reset_settings
 
 try:
@@ -53,11 +53,7 @@ it was removed to make the tip 'always picking the first applicable policy' less
     },
 """
 
-def choose_option(options):
-    print("Select an option:")
-    for key, desc in options.items():
-        print(f"[{key}] {desc}")
-    return get_input("> ", str, list(options.keys()))
+
 
 
 def main_menu():

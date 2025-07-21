@@ -31,6 +31,11 @@ def get_input(prompt, target_type = str, allowed_range = None, strip_whitespace=
             print(f"Input must be of type {target_type.__name__}. Error: {e}")
     
 
+def choose_option(options):
+    print("Select an option:")
+    for key, desc in options.items():
+        print(f"[{key}] {desc}")
+    return get_input("> ", str, list(options.keys()))
 # helper classes to use for allowed_range
 
 # e.g get_input("Enter a non-negative integer: ", int, RANGE_INCLUSIVE(0))
