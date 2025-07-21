@@ -1,5 +1,5 @@
 import pytest
-from shamir_secret_sharing import SecretSharer, SplitSecretSharer
+from shamir_secret_sharing import SecretSharer, SplitSecretSharer, split_byte_list, split_byte_dict
 from random import seed, randbytes
 from itertools import combinations, permutations
 
@@ -13,6 +13,42 @@ def test_invalid_initializations():
         SecretSharer([b'\x01\x02\x03\x04', b'\x05\x06', b'abcd'], 2)  # bitlength mismatch
     with pytest.raises(ValueError):
         SecretSharer([b'abc', b'def'], 1)  # invalid bitlength (not in KNOWN_POLYNOMIALS)
+
+
+def test_invalid_initializations_split():
+    with pytest.raises(ValueError):
+        SplitSecretSharer([b'a', b'ab'], 1)
+    with pytest.raises(ValueError):
+        SplitSecretSharer([b'ad', b'ab'], 0)
+    with pytest.raises(ValueError):
+        SplitSecretSharer([b'ad', b'ab'], 3)
+    # no error
+    SplitSecretSharer([b'abc', b'123'], 1)
+
+
+def test_split_byte_list():
+    inp = [b'123', b'abc']
+    out = [[b'1', b'a'], [b'2', b'b'], [b'3', b'c']]
+    assert split_byte_list(inp) == out
+
+
+def test_split_byte_dict():
+    inp = {0: b'xyz', 1: b'uvw'}
+    out = [{0: b'x', 1: b'u'}, {0: b'y', 1: b'v'}, {0: b'z', 1: b'w'}]
+    assert split_byte_dict(inp, 3) == out
+
+
+def test_split_actually_splits():
+    S = SplitSecretSharer([b'xy', b'uv'], 1)
+    secret = S.get_secret({0: b'xy'})
+
+    S1 = SecretSharer([b'x', b'u'], 1)
+    secret1 = S1.get_secret({0: b'x'})
+
+    S2 = SecretSharer([b'y', b'v'], 1)
+    secret2 = S2.get_secret({1: b'v'})
+
+    assert secret == secret1 + secret2
 
 
 def test_get_secret_with_not_enough_shares():
@@ -55,12 +91,15 @@ def test_get_secret_consistency_3():
 
 # test that any valid subset gives same secret
 # however dictionary still in increasing order so should also check (0, 2, 1) gives same result as (0, 1, 2)
-def test_get_secret_consistency_4_all_ordered_subsets():
+@pytest.mark.parametrize("testClass, byteLen", [(SecretSharer, 2), (SplitSecretSharer, 3)])
+def test_get_secret_consistency_4_all_ordered_subsets(testClass, byteLen):
     t = 3
-    shares = [b'\xd8', b'b', b'\xc2', b'\xe3', b'k', b'\n', b'B']
-    n = len(shares)
-    S = SecretSharer(shares, t)
-    secret = S.get_secret({0: b'\xd8', 1: b'b', 2: b'\xc2'})
+    n = 7
+    seed(0)
+    shares = [randbytes(byteLen) for i in range(7)]
+    S = testClass(shares, t)
+    seed(0)
+    secret = S.get_secret({0: randbytes(byteLen), 1: randbytes(byteLen), 2: randbytes(byteLen)})
     for i in range(t, n+1):
         for comb in combinations(range(len(shares)), i):
             secret2 = S.get_secret({
@@ -70,17 +109,19 @@ def test_get_secret_consistency_4_all_ordered_subsets():
             assert secret == secret2
 
 
-def test_get_secret_consistency_5_vary_permutations():
+@pytest.mark.parametrize("testClass", [SecretSharer, SplitSecretSharer])
+def test_get_secret_consistency_5_vary_permutations(testClass):
     t = 4
     n = 5
     seed(5)
-    shares = [randbytes(1) for i in range(n)]
-    S = SecretSharer(shares, t)
+    shares = [randbytes(2) for i in range(n)]
+    S = testClass(shares, t)
     secret = S.get_secret({
         i: shares[i]
         for i in range(t)
     })
-    for indices in permutations(range(t), t):
+    # test last t points as they will have non-0 y-shift
+    for indices in permutations(range(n-t, n), t):
         secret2 = S.get_secret({
             i: shares[i]
             for i in indices
@@ -110,5 +151,4 @@ def test_perfect_secrecy():
         assert secret not in seen
         seen.add(secret)
 
-# TODO finish above test, commit this, add composite (byte splitting secret sharing)
 

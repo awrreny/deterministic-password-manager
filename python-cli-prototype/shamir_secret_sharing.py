@@ -138,7 +138,23 @@ class SecretSharer:
         secret_bytes = secret.value.to_bytes(self.bitlength//8, 'big')
 
         return secret_bytes
- 
+
+
+def split_byte_list(byte_list: list[bytes]):
+    return [[bytes([b]) for b in pair] for pair in zip(*byte_list)]
+
+
+# e.g {0: b'xyz', 1: b'uvw'} -> [{0: b'x', 1: b'u'}, {0: b'y', 1: b'v'}, {0: b'z', 1: b'w'}]
+def split_byte_dict(byte_dict: dict[int, bytes], byteLen):
+    return [
+            {
+                index: bytes([known_share[i]])
+                for index, known_share in byte_dict.items()
+            }
+            for i in range(byteLen)
+        ]
+
+
 
 class SplitSecretSharer():
     def __init__(self, shares: list[bytes], key_threshold: int):
@@ -149,7 +165,7 @@ class SplitSecretSharer():
         ):
             raise ValueError("Each share must have the same bit length")
         
-        split_shares = [[bytes([b]) for b in pair] for pair in zip(*shares)]
+        split_shares = split_byte_list(shares)
 
         self.sharer_list = [
             SecretSharer(split_share, key_threshold) for split_share in split_shares
@@ -163,14 +179,7 @@ class SplitSecretSharer():
         ):
             raise ValueError("Byte length of shares given does not match byte length of original shares")
 
-        # e.g {'a': b'123','b': b'456'} -> [{'a': b'1', 'b': b'4'}, {'a': b'2', 'b': b'5'}, {'a': b'3', 'b': b'6'}]
-        split_known_shares = [
-            {
-                index: bytes([known_share[i]])
-                for index, known_share in known_shares.items()
-            }
-            for i in range(self.byte_length)
-        ]
+        split_known_shares = split_byte_dict(known_shares, self.byte_length)
 
         split_secrets = [
             S.get_secret(split_known_share)
