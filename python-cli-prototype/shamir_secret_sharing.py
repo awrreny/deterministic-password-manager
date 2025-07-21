@@ -109,6 +109,12 @@ class SecretSharer:
             raise ValueError(f"Not enough shares to reconstruct secret. (have {len(known_shares)}/{self.key_threshold} shares)")
 
         if not all(
+            8*len(v) == self.bitlength
+            for v in known_shares.values()
+        ):
+            raise ValueError("Bit length of shares given does not match bit length of original shares")
+
+        if not all(
             x in range(self.n)
             for x in known_shares.keys()
         ):
@@ -134,5 +140,42 @@ class SecretSharer:
         return secret_bytes
  
 
-# TODO composite secret sharer class for arbitrary byte length secrets (and avoiding large galois fields)
+class SplitSecretSharer():
+    def __init__(self, shares: list[bytes], key_threshold: int):
+        self.byte_length = len(shares[0])
+        if not all(
+            len(share) == self.byte_length 
+            for share in shares
+        ):
+            raise ValueError("Each share must have the same bit length")
+        
+        split_shares = [[bytes([b]) for b in pair] for pair in zip(*shares)]
+
+        self.sharer_list = [
+            SecretSharer(split_share, key_threshold) for split_share in split_shares
+        ]
+
     
+    def get_secret(self, known_shares: dict[int, bytes]):
+        if not all(
+            len(v) == self.byte_length
+            for v in known_shares.values()
+        ):
+            raise ValueError("Byte length of shares given does not match byte length of original shares")
+
+        # e.g {'a': b'123','b': b'456'} -> [{'a': b'1', 'b': b'4'}, {'a': b'2', 'b': b'5'}, {'a': b'3', 'b': b'6'}]
+        split_known_shares = [
+            {
+                index: bytes([known_share[i]])
+                for index, known_share in known_shares.items()
+            }
+            for i in range(self.byte_length)
+        ]
+
+        split_secrets = [
+            S.get_secret(split_known_share)
+            for S, split_known_share in zip(self.sharer_list, split_known_shares)
+        ]
+
+        secret = b''.join(split_secrets)
+        return secret

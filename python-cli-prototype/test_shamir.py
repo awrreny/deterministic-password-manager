@@ -1,5 +1,5 @@
 import pytest
-from shamir_secret_sharing import SecretSharer
+from shamir_secret_sharing import SecretSharer, SplitSecretSharer
 from random import seed, randbytes
 from itertools import combinations, permutations
 
@@ -27,6 +27,14 @@ def test_get_secret_with_invalid_share_index():
         S.get_secret({4:b'e'})
     with pytest.raises(ValueError):
         S.get_secret({-1:b'e'})
+
+
+def test_get_secret_with_invalid_share_value():
+    S = SecretSharer([b'a1', b'b2', b'c3', b'd4'], 1)
+    with pytest.raises(ValueError):
+        S.get_secret({0: b'a'})
+    with pytest.raises(ValueError):
+        S.get_secret({0: b'a1a'})
 
 
 def test_get_secret_consistency_1():
