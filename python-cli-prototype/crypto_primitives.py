@@ -21,7 +21,7 @@ class NoLeakSecretSharer:
     def get_secret(self, known_shares: dict[int, bytes]):
         known_encoded_shares = {
             i: fast_hash(known_share, self.byte_len)
-            for i, known_share in known_shares.keys()
+            for i, known_share in known_shares.items()
         }
 
         return self.internal_sharer.get_secret(known_encoded_shares)
