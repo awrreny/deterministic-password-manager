@@ -33,7 +33,7 @@ with open(POLICY_FILE, "r") as f:
 
 """
 there exists a removed policy which contains more characters than the default policy, but may not work with some sites.
-the default policy doesn't contain potentially disallowed characters like `"` or `\`,  or ambiguous characters like `l` and `1`, `O` and `0`,
+the default policy doesn't contain potentially disallowed characters like `"`,  or ambiguous characters like `l` and `1`, `O` and `0`,
 but still maintains >90 bits of entropy.
 it was removed to make the tip 'always picking the first applicable policy' less confusing.
 "allsymbols": {
