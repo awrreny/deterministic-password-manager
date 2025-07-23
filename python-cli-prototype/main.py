@@ -232,7 +232,7 @@ def generate_password(master_key, domain: str, username, counter, policy):
             "counter2": policy_counter,
         }).encode('utf-8')
         
-        hashval = slow_hash(master_key, hash_salt, password_length*8)
+        hashval = slow_hash(master_key, hash_salt, password_length)
 
         # conversion by base conversion
         x = int.from_bytes(hashval)
