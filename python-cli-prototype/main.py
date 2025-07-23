@@ -1,11 +1,11 @@
 from time import sleep, monotonic
 import json
-import hashlib
 from treefa import get_master_key
 import string
 from collections import defaultdict
 from inpututil import get_input, choose_option, RANGE_INCLUSIVE
 from settings_handler import get_settings, change_settings, reset_settings
+from crypto_primitives import slow_hash
 
 try:
     import pyperclip
@@ -14,13 +14,6 @@ except ImportError:
     print("pyperclip not available, clipboard functionality will not work. (will print passwords instead)")
     clipboard_available = False
 
-try:
-    import argon2
-    # from argon2
-    argon2_available = True
-except ImportError:
-    argon2_available = False
-    print("argon2 not available, using pbkdf2_hmac instead.")
 
 """
 NO SECURITY GUARANTEE
@@ -239,12 +232,8 @@ def generate_password(master_key, domain: str, username, counter, policy):
             "counter2": policy_counter,
         }).encode('utf-8')
         
-        if not argon2_available:
-            hashval = hashlib.pbkdf2_hmac('sha256', master_key, hash_salt, 600000, dklen=password_length)
-        else:
-            hashval = argon2.low_level.hash_secret_raw(master_key, hash_salt, 
-                                                        time_cost=3, memory_cost=65536, parallelism=4,
-                                                        hash_len=password_length, type=argon2.low_level.Type.ID)
+        hashval = slow_hash(master_key, hash_salt, password_length*8)
+
         # conversion by base conversion
         x = int.from_bytes(hashval)
         password = []
