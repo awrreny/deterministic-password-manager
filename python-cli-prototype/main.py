@@ -1,6 +1,6 @@
 from time import sleep, monotonic
 import json
-from treefa import get_master_key
+from treefa import get_master_key, change_auth_method
 import string
 from collections import defaultdict
 from inpututil import get_input, choose_option, RANGE_INCLUSIVE
@@ -61,6 +61,7 @@ def main_menu():
             get_password()
         case "c":
             change_authentication_methods()
+            main_menu()
         case "s":
             change_settings()
             main_menu()
@@ -271,13 +272,7 @@ def verify_policy(policy, password):
 
 
 def change_authentication_methods():
-    raise NotImplementedError()
-    # TODO
-
-
-
-
-
+    change_auth_method()
 
 
 if __name__ == "__main__":

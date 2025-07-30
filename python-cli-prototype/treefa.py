@@ -92,36 +92,6 @@ def get_node_secret(node: AuthNode):
         case _:
             raise NotImplementedError()
 
-        
-            
-# v = testnode("a1")
-# u = testnode("c")
-# w = testnode("x")
-# x = create_anyt_node([v,u,w], 2, "hi")
-# print(get_node_secret(x))
-
-
-def get_master_key():
-    try:
-        tree_root_node = load_tree()
-        secret = get_node_secret(tree_root_node)
-    except FileNotFoundError:
-        print(f"{TREE_FILE} not found, creating tree from scratch (will create new master key)")
-        tree_root_node, secret = create_tree_and_return_secret()
-        print(f"Finished creating auth tree, now saving to {TREE_FILE}")
-        save_tree(tree_root_node)
-    return secret
-    
-
-def save_tree(obj):
-    with open(TREE_FILE, 'wb') as f:
-        pickle.dump(obj, f)
-
-
-def load_tree():
-    with open(TREE_FILE, 'rb') as f:
-        return pickle.load(f)
-    
 
 def create_tree_and_return_secret() -> tuple[AuthNode, bytes]:
     node_types = {
@@ -178,8 +148,30 @@ def create_tree_and_return_secret() -> tuple[AuthNode, bytes]:
             raise ValueError
         
 
-# nd, sc = create_tree_and_return_secret()
-# print("---")
-# assert get_node_secret(nd) == sc
+def save_tree(obj):
+    with open(TREE_FILE, 'wb') as f:
+        pickle.dump(obj, f)
 
 
+def load_tree():
+    with open(TREE_FILE, 'rb') as f:
+        return pickle.load(f)
+
+
+def get_master_key():
+    try:
+        tree_root_node = load_tree()
+        secret = get_node_secret(tree_root_node)
+    except FileNotFoundError:
+        print(f"{TREE_FILE} not found, creating tree from scratch (will create new master key)")
+        tree_root_node, secret = create_tree_and_return_secret()
+        print(f"Finished creating auth tree, now saving to {TREE_FILE}")
+        save_tree(tree_root_node)
+    return secret
+
+
+def change_auth_method():
+    # does not need authentication as the derived passwords change with the auth method
+    tree_root_node, _ = create_tree_and_return_secret()
+    print(f"Finished creating auth tree, now saving to {TREE_FILE}")
+    save_tree(tree_root_node)
