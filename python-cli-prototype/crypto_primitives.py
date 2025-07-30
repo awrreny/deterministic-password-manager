@@ -28,6 +28,8 @@ class NoLeakSecretSharer:
 
 
 def fast_hash(inp: bytes, byte_len=32):
+    if not isinstance(inp, bytes):
+        raise ValueError(f"Argument to fast_hash must by bytes object (currently {inp})")
     shake_object = hashlib.shake_256()
     shake_object.update(inp)
 
