@@ -102,9 +102,16 @@ def get_node_secret(node: AuthNode):
 
 
 def get_master_key():
-    # placeholder
-    return get_node_secret(testnode("placeholder"))
-
+    try:
+        tree_root_node = load_tree()
+        secret = get_node_secret(tree_root_node)
+    except FileNotFoundError:
+        print(f"{TREE_FILE} not found, creating tree from scratch (will create new master key)")
+        tree_root_node, secret = create_tree_and_return_secret()
+        print(f"Finished creating auth tree, now saving to {TREE_FILE}")
+        save_tree(tree_root_node)
+    return secret
+    
 
 def save_tree(obj):
     with open(TREE_FILE, 'wb') as f:
