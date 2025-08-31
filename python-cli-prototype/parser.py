@@ -38,26 +38,26 @@ L ->  O
 """
 
 parser = Lark(r"""
-    or_expression: and_expression ("or" and_expression)*
+    ?or_expr: and_expr ("or" and_expr)*
     
-    and_expression: primary_expression ("and" primary_expression)*
+    ?and_expr: any_expr ("and" any_expr)*
     
-    primary_expression: "any" POS_INT "of" "(" expr_list ")"
+    ?any_expr: "any" POS_INT "of" "(" expr_list ")"
                       | "any" POS_INT "of" list_identifier
-                      | "(" or_expression ")"
+                      | "(" or_expr ")"
                       | identifier
     
-    expr_list: or_expression ("," or_expression)*
+    expr_list: or_expr ("," or_expr)*
     
-    identifier: IDENTIFIER
-    list_identifier: IDENTIFIER
+    ?identifier: IDENTIFIER
+    ?list_identifier: IDENTIFIER
 
     POS_INT: /[1-9][0-9]*/
     IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
     
     %import common.WS
     %ignore WS
-    """, start='or_expression')
+    """, start='or_expr')
 
 # Test cases to show tree structure
 if __name__ == "__main__":
