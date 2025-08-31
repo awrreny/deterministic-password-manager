@@ -186,7 +186,7 @@ def get_password():
         username = ""
     
     if settings.get("askCounter", "yes") == "yes":
-        counter = get_input("Enter the password version (counter)\n> ", int, RANGE_INCLUSIVE(0))
+        counter = get_input("Enter the password version (counter)\n> ", int, RANGE_INCLUSIVE(0)) # type: ignore
     else:
         counter = 0
 
@@ -198,7 +198,7 @@ def get_password():
 
         prompt = "Enter the password policy (number) or leave blank for default. " \
         "\nTip: always picking the first applicable policy removes the need to remember which one was chosen\n> "
-        policy_num = get_input(prompt, int, range(len(policies)))
+        policy_num = get_input(prompt, int, range(len(policies))) # type: ignore
         policy = list(policies.values())[policy_num]
  
 
