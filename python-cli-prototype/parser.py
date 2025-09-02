@@ -42,10 +42,13 @@ parser = Lark(r"""
     
     ?and_expr: any_expr ("and" any_expr)*
     
-    ?any_expr: "any" POS_INT "of" "(" expr_list ")"
-                      | "any" POS_INT "of" list_identifier
-                      | "(" or_expr ")"
-                      | identifier
+    ?any_expr: any_of_list
+            | any_of_children
+            | "(" or_expr ")"
+            | identifier
+              
+    any_of_list: "any" POS_INT "of" list_identifier
+    any_of_children: "any" POS_INT "of" "(" expr_list ")"
     
     expr_list: or_expr ("," or_expr)*
     
