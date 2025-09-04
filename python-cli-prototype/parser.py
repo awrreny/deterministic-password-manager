@@ -82,28 +82,3 @@ def extract_identifiers(parse_tree) -> tuple[list[str], list[str]]:
     extractor = IdentifierExtractor()
     extractor.visit(parse_tree)
     return extractor.single_identifiers, extractor.list_identifiers
-
-
-# Test cases to show tree structure
-if __name__ == "__main__":
-    print("CURRENT GRAMMAR PARSE TREES:")
-    print("=" * 40)
-    
-    test1 = "any 1 of (id1, id2)"
-    print(f"\nTest 1: '{test1}'")
-    tree1 = parser.parse(test1)
-    print(tree1.pretty())
-    
-    test2 = "id1 or any 2 of (id3 and id4)"
-    print(f"\nTest 2: '{test2}'")  
-    tree2 = parser.parse(test2)
-    print(tree2.pretty())
-
-    test3 = "id1 or any 2 of list1"
-    print(f"\nTest 3: '{test3}'")
-    tree3 = parser.parse(test3)
-    print(tree3.pretty())
-
-    single_ids, list_ids = extract_identifiers(tree3)
-    print("Single Identifiers:", single_ids)
-    print("List Identifiers:", list_ids)
