@@ -47,17 +47,16 @@ parser = Lark(r"""
             | "(" or_expr ")"
             | identifier
               
-    any_of_list: "any" POS_INT "of" list_identifier
-    any_of_children: "any" POS_INT "of" "(" expr_list ")"
+    any_of_list: "any" INT "of" list_identifier
+    any_of_children: "any" INT "of" "(" expr_list ")"
     
     expr_list: or_expr ("," or_expr)*
-    
-    ?identifier: IDENTIFIER
-    ?list_identifier: IDENTIFIER
 
-    POS_INT: /[1-9][0-9]*/
-    IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
-    
+    identifier: CNAME
+    list_identifier: CNAME
+
+    %import common.CNAME
+    %import common.INT
     %import common.WS
     %ignore WS
     """, start='or_expr')
