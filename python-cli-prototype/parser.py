@@ -1,5 +1,6 @@
 # pip install lark
 from lark import Lark
+from lark.visitors import Visitor
 
 """
 original language:
@@ -61,6 +62,28 @@ parser = Lark(r"""
     %ignore WS
     """, start='or_expr')
 
+
+class IdentifierExtractor(Visitor):
+    def __init__(self):
+        self.single_identifiers = []
+        self.list_identifiers = []
+    
+    def identifier(self, tree):
+        name = str(tree.children[0])  # CNAME token
+        if name not in self.single_identifiers:
+            self.single_identifiers.append(name)
+    
+    def list_identifier(self, tree):
+        name = str(tree.children[0])  # CNAME token
+        if name not in self.list_identifiers:
+            self.list_identifiers.append(name)
+
+def extract_identifiers(parse_tree) -> tuple[list[str], list[str]]:
+    extractor = IdentifierExtractor()
+    extractor.visit(parse_tree)
+    return extractor.single_identifiers, extractor.list_identifiers
+
+
 # Test cases to show tree structure
 if __name__ == "__main__":
     print("CURRENT GRAMMAR PARSE TREES:")
@@ -80,3 +103,7 @@ if __name__ == "__main__":
     print(f"\nTest 3: '{test3}'")
     tree3 = parser.parse(test3)
     print(tree3.pretty())
+
+    single_ids, list_ids = extract_identifiers(tree3)
+    print("Single Identifiers:", single_ids)
+    print("List Identifiers:", list_ids)
