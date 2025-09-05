@@ -1,6 +1,6 @@
 from time import sleep, monotonic
 import json
-from treefa import get_master_key, change_auth_method
+from auth.treefa import get_master_key, change_auth_method
 import string
 from collections import defaultdict
 from inpututil import get_input, choose_option, RANGE_INCLUSIVE

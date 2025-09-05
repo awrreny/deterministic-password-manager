@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Show parse trees for OR and AND expressions."""
 
-from parser import parser, extract_identifiers
+from .parser import parser, extract_identifiers
 
 def show_tree(description, test_input):
     """Parse and display the tree structure."""

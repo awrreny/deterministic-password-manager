@@ -1,5 +1,5 @@
 import pytest
-from shamir_secret_sharing import SecretSharer, SplitSecretSharer, split_byte_list, split_byte_dict
+from .shamir_secret_sharing import SecretSharer, SplitSecretSharer, split_byte_list, split_byte_dict
 from random import seed, randbytes
 from itertools import combinations, permutations
 

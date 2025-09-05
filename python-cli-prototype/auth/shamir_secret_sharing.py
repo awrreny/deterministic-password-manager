@@ -1,5 +1,5 @@
 from math import prod
-from galois_field import GF2n, KNOWN_POLYNOMIALS
+from .galois_field import GF2n, KNOWN_POLYNOMIALS
 
 # NO SECURITY GUARANTEE
 # all cryptography here is homemade

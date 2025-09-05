@@ -1,5 +1,5 @@
 import hashlib
-from shamir_secret_sharing import SplitSecretSharer
+from auth.shamir_secret_sharing import SplitSecretSharer
 try:
     import argon2
 except ImportError:
