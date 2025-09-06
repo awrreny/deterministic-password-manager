@@ -1,5 +1,6 @@
 import pytest
 from .shamir_secret_sharing import SecretSharer, SplitSecretSharer, split_byte_list, split_byte_dict
+from crypto_primitives import NoLeakSecretSharer
 from random import seed, randbytes
 from itertools import combinations, permutations
 
@@ -91,7 +92,7 @@ def test_get_secret_consistency_3():
 
 # test that any valid subset gives same secret
 # however dictionary still in increasing order so should also check (0, 2, 1) gives same result as (0, 1, 2)
-@pytest.mark.parametrize("testClass, byteLen", [(SecretSharer, 2), (SplitSecretSharer, 3)])
+@pytest.mark.parametrize("testClass, byteLen", [(SecretSharer, 2), (SplitSecretSharer, 3), (NoLeakSecretSharer, 2)])
 def test_get_secret_consistency_4_all_ordered_subsets(testClass, byteLen):
     t = 3
     n = 7
@@ -109,7 +110,7 @@ def test_get_secret_consistency_4_all_ordered_subsets(testClass, byteLen):
             assert secret == secret2
 
 
-@pytest.mark.parametrize("testClass", [SecretSharer, SplitSecretSharer])
+@pytest.mark.parametrize("testClass", [SecretSharer, SplitSecretSharer, NoLeakSecretSharer])
 def test_get_secret_consistency_5_vary_permutations(testClass):
     t = 4
     n = 5
@@ -152,3 +153,11 @@ def test_perfect_secrecy():
         seen.add(secret)
 
 
+def test_deterministic():
+    S1 = NoLeakSecretSharer([b'a', b'b', b'c', b'd'], 3)
+    S2 = NoLeakSecretSharer([b'a', b'b', b'c', b'd'], 3)
+
+    # get secret and compare
+    secret1 = S1.get_secret({0: b'a', 1: b'b', 2: b'c'})
+    secret2 = S2.get_secret({0: b'a', 1: b'b', 2: b'c'})
+    assert secret1 == secret2

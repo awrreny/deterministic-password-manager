@@ -6,13 +6,23 @@ except ImportError:
     argon2 = None
 
 
-# variant of secret sharing where knowing t shares does not leak the other n-t shares
-# input shares should have high entropy
 class NoLeakSecretSharer:
+    """
+    variant of secret sharing where knowing t shares does not leak the other n-t shares.
+    without this, knowing b would be enough tos derive a (and the full secret) in the treefa (a or b) and a
+
+    pure hashing by itself does not stop this as, in the example, the hash of a can be found from `(a or b)`, then used in `(...) and a`.
+    salting mitigates this by ensuring the same password in different parts of the tree will have different hashes.
+    (if the password's parent has the exact same children then the salt is the same but this is fine)
+
+    it is preferred to use a deterministic salt to keep the entire tree creation deterministic (for easier cross-device)
+    thus the salt is derived from all the secrets and then stored
+    """
     def __init__(self, shares: list[bytes], key_threshold: int, secret_byte_len: int = 32):
+        self.salt = fast_hash(b''.join(shares), secret_byte_len)
         self.byte_len = secret_byte_len
         encoded_shares = [
-            fast_hash(share, secret_byte_len)
+            fast_hash(self.salt+share, secret_byte_len)
             for share in shares
         ]
         self.internal_sharer = SplitSecretSharer(encoded_shares, key_threshold)
@@ -20,7 +30,7 @@ class NoLeakSecretSharer:
 
     def get_secret(self, known_shares: dict[int, bytes]):
         known_encoded_shares = {
-            i: fast_hash(known_share, self.byte_len)
+            i: fast_hash(self.salt+known_share, self.byte_len)
             for i, known_share in known_shares.items()
         }
 
