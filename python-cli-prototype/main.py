@@ -108,8 +108,7 @@ def get_setting_bool(setting_name, prompt, trueVal="yes", falseVal="no", trueCha
     elif setting_value == falseVal:
         return False
     elif setting_value == "ask":
-        while True:
-            return (choose_option(prompt) == trueChar)
+        return (choose_option(prompt) == trueChar)
     else:
         raise ValueError(f"Invalid setting value for {setting_name}: {setting_value}. Expected '{trueVal}', '{falseVal}' or 'ask'.")
 
@@ -166,41 +165,83 @@ def saveData(domain, data):
     else:
         print("Site data found (not saving again).")
 
+
+def get_saved_data_for_domain(sites_data, domain):
+    """Get the first saved data entry for a domain, or None if no data exists."""
+    saved_options = sites_data.get(domain, [])
+    return saved_options[0] if saved_options else None
+
+
+def get_field_value(field_name, saved_data, ask_setting, prompt_func):
+    """
+    Get a field value, either from saved data or by asking the user.
     
+    Args:
+        field_name: Name of the field in saved data (e.g., 'username', 'counter', 'policy')
+        saved_data: Dictionary of saved data or None
+        ask_setting: Setting name to check if we should ask for this field
+        prompt_func: Function to call to prompt user if no saved data
+    """
+    if settings.get(ask_setting, "yes") == "no":
+        return None
+    
+    if saved_data and field_name in saved_data:
+        value = saved_data[field_name]
+        print(f"Autofilled {field_name}: {value}")
+        return value
+    else:
+        return prompt_func()
+
+
+def prompt_policy():
+    print("\nAvailable password policies:")
+    for idx, (name, policy_data) in enumerate(policies.items()):
+        print(f"[{idx}] {name} ({policy_data['length']} chars)")
+    
+    prompt = "Enter the password policy (number) or leave blank for default\n" \
+             "Tip: always picking the first applicable policy removes the need to remember which one was chosen\n> "
+    
+    policy_input = get_input(prompt)
+    if policy_input == "":
+        return policies.get("default")
+    else:
+        policy_num = int(policy_input)
+        return list(policies.values())[policy_num]
+
 
 def get_password():
     master_key = get_master_key()
     
-    if settings.get("saveSites", "no") == "yes":
+    try:
         with open(SITE_DATA_FILE, "r") as f:
             sites_data = json.load(f)
-            print(f"Available sites: {', '.join(sites_data.keys())}")
-            print("See site_data.json for saved usernames, counters, policies.")
-    
+    except FileNotFoundError:
+        sites_data = {}
 
+    if sites_data and settings.get("saveSites", "no") == "yes":
+        print(f"Available sites: {', '.join(sites_data.keys())}")
+    
     domain = get_input("Enter the domain\n> ")
-
-    if settings.get("askUsername", "yes") == "yes":
-        username = get_input("Enter username\n> ")
-    else:
-        username = ""
     
-    if settings.get("askCounter", "yes") == "yes":
-        counter = get_input("Enter the password version (counter)\n> ", int, RANGE_INCLUSIVE(0)) # type: ignore
-    else:
-        counter = 0
+    # Get saved data for this domain (if any)
+    saved_data = get_saved_data_for_domain(sites_data, domain)
+    if saved_data:
+        print(f"Found saved data for {domain}")
+    
+    # Get username, counter, and policy (with autofill if available)
+    username = get_field_value("username",
+                                saved_data,
+                                "askUsername",
+                                lambda:get_input("Enter username\n> ")) or ""
+    counter = get_field_value("counter", 
+                              saved_data, 
+                              "askCounter", 
+                              lambda:get_input("Enter the password version (counter)\n> ", int, RANGE_INCLUSIVE(0))) or 0
+    policy = get_field_value("policy", 
+                             saved_data, 
+                             "askPolicy", 
+                             prompt_policy) or policies.get("default")
 
-    policy = policies.get("default")
-    if settings.get("askPolicy", "yes") == "yes":
-        print("\nAvailable password policies:")
-        for idx, (name, ans) in enumerate(policies.items()):
-            print(f"[{idx}] {name} ({ans['length']} chars)")
-
-        prompt = "Enter the password policy (number) or leave blank for default. " \
-        "\nTip: always picking the first applicable policy removes the need to remember which one was chosen\n> "
-        policy_num = get_input(prompt, int, range(len(policies))) # type: ignore
-        policy = list(policies.values())[policy_num]
- 
 
     handle_saving(domain, username, counter, policy)
 
