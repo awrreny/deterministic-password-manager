@@ -1,4 +1,8 @@
-def get_input(prompt, target_type = str, allowed_range = None, strip_whitespace=True):
+from typing import Type, TypeVar, Any
+
+
+# Type[Any] can be improved but not required for this prototype
+def get_input(prompt, target_type: Type[Any] = str, allowed_range = None, strip_whitespace=True):
     """
     variation of input() with type casting and validation.
         target_type: The type to which the input should be cast (e.g., int, float, str, bool)
@@ -31,7 +35,7 @@ def get_input(prompt, target_type = str, allowed_range = None, strip_whitespace=
             print(f"Input must be of type {target_type.__name__}. Error: {e}")
     
 
-def choose_option(options, text1="Select an option:", text2="", inp_type=str):
+def choose_option(options: dict, text1="Select an option:", text2="", inp_type: Type[Any] =str):
     print(text1)
     for key, desc in options.items():
         print(f"[{key}] {desc}")
