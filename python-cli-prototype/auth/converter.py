@@ -1,6 +1,7 @@
 from lark.visitors import Transformer
-from .parser import parser, extract_identifiers, collect_passwords
+from .parser import parser, extract_identifiers
 from .treefa_utils import create_password_node_with_secret, create_anyt_node_with_secrets
+from getpass import getpass
 
 
 class TreefaConverter(Transformer):
@@ -40,7 +41,7 @@ class TreefaConverter(Transformer):
 
         # Convert list of passwords to list of (PasswordNode, secret) tuples
         password_nodes_and_secrets = []
-        for i, pwd in enumerate(self.list_passwords[list_name]):
+        for i, pwd in enumerate(self.list_passwords[list_name], start=1):
             node, secret = create_password_node_with_secret(pwd, f"{list_name}_{i}")
             password_nodes_and_secrets.append((node, secret))
         
@@ -74,6 +75,64 @@ class TreefaConverter(Transformer):
         # The PasswordNodes will be created in any_of_list
         name = str(children[0])  # CNAME token
         return name
+    
+
+def _get_confirmed_password(prompt: str, confirm_passwords: bool, indent = False) -> str:
+    """Get a password with optional confirmation."""
+    
+    indent_str = '    ' if indent else ''
+
+    while True:
+        password = getpass(f"{indent_str}{prompt}")
+        if not confirm_passwords:
+            return password
+
+        confirm = getpass(f"{indent_str}Confirm {prompt} ")
+        if password == confirm:
+            return password
+        else:
+            print("Passwords don't match. Please try again.")
+
+
+def collect_passwords(single_identifiers: list[str], list_identifiers: list[str], confirm_passwords: bool = False) -> tuple[dict[str, str], dict[str, list[str]]]:
+    """
+    Collect passwords from user for single and list identifiers.
+    
+    Args:
+        single_identifiers: List of single identifier names
+        list_identifiers: List of list identifier names
+        confirm_passwords: If True, prompt user to enter each password twice for confirmation
+    
+    Returns:
+        Tuple of (single_passwords_dict, list_passwords_dict)
+    """
+    single_passwords = {}
+    list_passwords = {}
+    
+    # Collect passwords for single identifiers
+    for identifier in single_identifiers:
+        password = _get_confirmed_password(f"Enter password for '{identifier}': ", confirm_passwords)
+        single_passwords[identifier] = password
+    
+    # Collect passwords for list identifiers
+    for list_identifier in list_identifiers:
+        print(f"\nEnter passwords for list '{list_identifier}' or leave blank to finish")
+        passwords = []
+        index = 1
+        
+        while True:
+            password = _get_confirmed_password(f"Password {index}: ", confirm_passwords, indent=True)
+            if password == "":
+                break
+            passwords.append(password)
+            index += 1
+        
+        list_passwords[list_identifier] = passwords
+    
+    return single_passwords, list_passwords
+
+# single_passwords should be mapped to a PasswordNode
+# list_passwords should be mapped to a list of PasswordNodes, all of which are children of a single AnyOfListNode
 
 
 def parse_to_treefa(expression_string: str, confirm_passwords: bool = False):
