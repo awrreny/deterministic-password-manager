@@ -1,6 +1,7 @@
 from lark.visitors import Transformer
 from .parser import parser, extract_identifiers, collect_passwords
-from .treefa import PasswordNode, AnyTNode, create_password_node_with_secret, create_anyt_node_with_secrets, get_node_secret
+from .treefa_utils import PasswordNode, AnyTNode, create_password_node_with_secret, create_anyt_node_with_secrets
+from treefa import get_node_secret
 from crypto_primitives import slow_hash, fast_hash
 
 
