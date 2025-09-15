@@ -1,8 +1,6 @@
 from lark.visitors import Transformer
 from .parser import parser, extract_identifiers, collect_passwords
-from .treefa_utils import PasswordNode, AnyTNode, create_password_node_with_secret, create_anyt_node_with_secrets
-from treefa import get_node_secret
-from crypto_primitives import slow_hash, fast_hash
+from .treefa_utils import create_password_node_with_secret, create_anyt_node_with_secrets
 
 
 class TreefaConverter(Transformer):
@@ -98,12 +96,3 @@ def parse_to_treefa(expression_string: str, confirm_passwords: bool = False):
 
     converter = TreefaConverter(single_passwords, list_passwords)
     return converter.transform(parse_tree)
-
-
-if __name__ == "__main__":
-    tree, secret = parse_to_treefa("any 2 of users")
-    print(f"Master secret: {secret.hex()}")
-    
-    print("Authentication test:")
-    secret_2 = get_node_secret(tree)
-    print(f"Derived secret: {secret_2.hex()}")

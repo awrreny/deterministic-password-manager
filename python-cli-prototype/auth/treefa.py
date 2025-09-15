@@ -144,7 +144,20 @@ def get_master_key():
         secret = get_node_secret(tree_root_node)
     except FileNotFoundError:
         print(f"{TREE_FILE} not found, creating tree from scratch (will create new master key)")
-        tree_root_node, secret = create_tree_and_return_secret()
+        
+        # Give user choice of creation method
+        creation_methods = {
+            "e": "Expression-based (e.g., 'admin and user1', 'any 2 of users')",
+            "i": "Interactive step-by-step"
+        }
+        
+        method = choose_option(creation_methods, text1="Choose how to create your authentication tree:")
+        
+        if method == "e":
+            tree_root_node, secret = create_tree_from_expression()
+        else:
+            tree_root_node, secret = create_tree_and_return_secret()
+            
         print(f"Finished creating auth tree, now saving to {TREE_FILE}")
         save_tree(tree_root_node)
     return secret
@@ -153,6 +166,45 @@ def get_master_key():
 def change_auth_method():
     # does not strictly need authentication as the derived passwords change with the auth method
     # changing auth method will always be possible by someone who controls the device as they can just delete the auth tree file
-    tree_root_node, _ = create_tree_and_return_secret()
+    
+    # Give user choice of creation method
+    creation_methods = {
+        "e": "Expression-based (e.g., 'admin and user1', 'any 2 of users')",
+        "i": "Interactive step-by-step"
+    }
+    
+    method = choose_option(creation_methods, text1="Choose how to create your new authentication tree:")
+    
+    if method == "e":
+        tree_root_node, _ = create_tree_from_expression()
+    else:
+        tree_root_node, _ = create_tree_and_return_secret()
+        
     print(f"Finished creating auth tree, now saving to {TREE_FILE}")
     save_tree(tree_root_node)
+
+
+def create_tree_from_expression() -> tuple[AuthNode, bytes]:
+    """
+    Create a treefa tree using the parser interface instead of interactive building.
+    
+    Returns:
+        Tuple of (root treefa node, root secret)
+    """
+    from .converter import parse_to_treefa
+    from inpututil import get_input
+    
+    print("Enter a logical expression to define your authentication tree.")
+    print("Examples:")
+    print("  - admin and user1")
+    print("  - any 2 of users") 
+    print("  - admin or (user1 and user2)")
+    print("  - any 3 of (admin, user1, user2, backup)")
+    print()
+    
+    expression = get_input("Enter expression:\n> ")
+    
+    print(f"Creating tree from expression: {expression}")
+    
+    # Use the parser to create the tree
+    return parse_to_treefa(expression, confirm_passwords=True)
