@@ -19,7 +19,7 @@ class NoLeakSecretSharer:
     thus the salt is derived from all the secrets and then stored
     """
     def __init__(self, shares: list[bytes], key_threshold: int, secret_byte_len: int = 32):
-        self.salt = fast_hash(b''.join(shares), secret_byte_len)
+        self.salt = fast_hash(b''.join(shares), secret_byte_len) + bytes(str(key_threshold), encoding='utf-8')
         self.byte_len = secret_byte_len
         encoded_shares = [
             fast_hash(self.salt+share, secret_byte_len)
