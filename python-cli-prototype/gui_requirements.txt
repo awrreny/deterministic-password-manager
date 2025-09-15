@@ -1,0 +1,2 @@
+# GUI Requirements for Deterministic Password Manager
+pyperclip>=1.8.0  # For clipboard functionality
